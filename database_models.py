@@ -12,6 +12,7 @@ class Hotel(Model):
     name = CharField(max_length=50, null=True, unique=True)
     address = CharField(max_length=255, null=True, unique=True)
     address_detail = CharField(max_length=255, null=True)
+    website_link = CharField(max_length=127, null=True)
     zipcode = IntegerField(default=0, null=True)
     latitude = FloatField(default=0, null=True)
     longitude = FloatField(default=0, null=True)

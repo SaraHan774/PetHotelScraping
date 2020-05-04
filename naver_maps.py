@@ -3,7 +3,7 @@ import json
 import datetime
 from database_models import Hotel, sqlite_db
 import credentials
-
+import re
 
 
 seoul_gu_names = ["남구", "강동구","강북구", "강서구", "관악구","광진구",
@@ -11,11 +11,13 @@ seoul_gu_names = ["남구", "강동구","강북구", "강서구", "관악구","�
                     "마포구", "서대문구", "서초구", "성동구", "성북구", "송파구",
                     "양천구", "영등포구", "용산구", "은평구", "종로구", "중구", "중랑구"]
 
+BASE_URL = "https://openapi.naver.com/v1/"
+
 
 def search_places(query, display=30, start=1, sort="random"):
 
     encText = urllib.parse.quote(query)
-    url = "https://openapi.naver.com/v1/search/local.json" + \
+    url = BASE_URL + "search/local.json" + \
           "?query=" + encText + \
           "&display=" + str(display) + \
           "&start=" + str(start) + \
@@ -50,10 +52,10 @@ def save_to_database_server(results):
     timestamp = datetime.datetime.now()
 
     for item in results["items"]:
-        query = Hotel.insert(name=item["title"], address=item["roadAddress"],
+        formatted_name = format_hotel_name(item["title"])
+        query = Hotel.insert(name=formatted_name, address=item["roadAddress"], website_link=item["link"],
                       latitude=float(item["mapx"]), longitude=float(item["mapy"]),
                       phone_number=item["telephone"], created_at=timestamp)
-
         try:
             query.on_conflict(action='REPLACE')
             query.execute()
@@ -62,7 +64,30 @@ def save_to_database_server(results):
             sqlite_db.rollback()
 
 
+hotel_name_list = []
+
+
+def format_hotel_name(name):
+    if '<b>' or '&amp' in name:
+        name = re.sub('<b>|</b>', '', name)
+        name = re.sub('&amp;', '&', name)
+    return name
+
+
+# def get_all_hotel_names_from_database():
+#     query = Hotel.select(Hotel.name)
+#     for hotel in query:
+#         name = hotel.name
+#         if '<b>' or '&amp' in name:
+#             name = re.sub('<b>|</b>', '', name)
+#             name = re.sub('&amp;', '&', name)
+#         hotel_name_list.append(name)
+
+
 if __name__ == '__main__':
+    # get_all_hotel_names_from_database()
+    # for name in hotel_name_list:
+    #     print(name)
 
     for name in seoul_gu_names:
         # time.sleep(0.5)
