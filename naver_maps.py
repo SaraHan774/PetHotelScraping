@@ -1,5 +1,6 @@
 import urllib.request
 import json
+import time
 import datetime
 from database_models import Hotel, sqlite_db
 import credentials
@@ -36,9 +37,11 @@ def search_places(query, display=30, start=1, sort="random"):
 
         # 결과를 JSON 키값으로 접근하기 위해 json.loads 를 한다.
         result = json.loads(decoded_body)
-        print(result)
+        # print(result)
         save_to_database_server(result)
-
+        for item in result["items"]:
+            if "호텔" in str(item["category"]):
+                print(item["title"])
         # 결과가 30개 이상이면 start 를 30 더해서 다시 검색한다.
         if len(result["items"]) >= display:
             search_places(query, start=start+30)
@@ -64,7 +67,7 @@ def save_to_database_server(results):
             sqlite_db.rollback()
 
 
-hotel_name_list = []
+hotel_name_link_pairs = []
 
 
 def format_hotel_name(name):
@@ -74,23 +77,23 @@ def format_hotel_name(name):
     return name
 
 
-# def get_all_hotel_names_from_database():
-#     query = Hotel.select(Hotel.name)
-#     for hotel in query:
-#         name = hotel.name
-#         if '<b>' or '&amp' in name:
-#             name = re.sub('<b>|</b>', '', name)
-#             name = re.sub('&amp;', '&', name)
-#         hotel_name_list.append(name)
+def get_hotel_name_and_link():
+    query = Hotel.select(Hotel.name, Hotel.website_link)
+    for hotel in query:
+        name = format_hotel_name(hotel.name)
+        website = hotel.website_link
+        hotel_name_link_pairs.append(name + ", " + website)
 
 
 if __name__ == '__main__':
-    # get_all_hotel_names_from_database()
-    # for name in hotel_name_list:
-    #     print(name)
-
     for name in seoul_gu_names:
-        # time.sleep(0.5)
+        time.sleep(0.5)
         print("==== RESULT OF " + name + " ====")
         search_places(query=name + " 애견호텔")
+
+    # get_hotel_name_and_link()
+    # with open('hotel_names.csv', "w", encoding='utf-8') as f:
+    #     for info in hotel_name_link_pairs:
+    #         f.write(info + "\n")
+
 
